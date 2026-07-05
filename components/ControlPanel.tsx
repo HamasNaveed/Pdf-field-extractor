@@ -64,9 +64,22 @@ export default function ControlPanel({
         body: formData,
       });
 
+      const contentType = response.headers.get('content-type') || '';
+
+      // Handle server crashes that return HTML error pages (e.g. 500 Internal Server Error)
+      if (!response.ok && !contentType.includes('application/json') && !contentType.includes('application/pdf')) {
+        const errText = await response.text();
+        onResponse({
+          success: false,
+          error: `API Request failed with status ${response.status} (${response.statusText})`,
+          details: errText.substring(0, 1500),
+        });
+        return;
+      }
+
       // Handle PDF binary downloads
       if (action === 'fill' || action === 'flatten') {
-        if (response.ok && response.headers.get('content-type') === 'application/pdf') {
+        if (response.ok && contentType.includes('application/pdf')) {
           const blob = await response.blob();
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
