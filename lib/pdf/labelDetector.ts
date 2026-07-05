@@ -1,5 +1,4 @@
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
-import 'pdfjs-dist/legacy/build/pdf.worker.mjs';
 
 export interface TextItem {
   text: string;
