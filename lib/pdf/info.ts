@@ -1,4 +1,4 @@
-import { PDFDocument, PDFName, PDFDict } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFDict, PDFRef } from 'pdf-lib';
 import { PDFInfoData } from '../../types';
 
 export async function extractPdfInfo(pdfBuffer: Buffer, fileName: string): Promise<PDFInfoData> {
@@ -11,18 +11,27 @@ export async function extractPdfInfo(pdfBuffer: Buffer, fileName: string): Promi
     let hasXFA = false;
     let fieldCount = 0;
 
-    const acroForm = pdfDoc.catalog.get(PDFName.of('AcroForm'));
-    if (acroForm instanceof PDFDict) {
-      hasAcroForm = true;
-      try {
-        const form = pdfDoc.getForm();
-        fieldCount = form.getFields().length;
-      } catch {
-        fieldCount = 0;
+    try {
+      const form = pdfDoc.getForm();
+      const fields = form.getFields();
+      fieldCount = fields.length;
+      if (fieldCount > 0) {
+        hasAcroForm = true;
       }
-      
-      const xfa = acroForm.get(PDFName.of('XFA'));
-      hasXFA = xfa !== undefined;
+    } catch {
+      fieldCount = 0;
+    }
+
+    try {
+      const acroFormRef = pdfDoc.catalog.get(PDFName.of('AcroForm'));
+      const acroForm = acroFormRef instanceof PDFRef ? pdfDoc.context.lookup(acroFormRef) : acroFormRef;
+      if (acroForm instanceof PDFDict) {
+        hasAcroForm = true;
+        const xfa = acroForm.get(PDFName.of('XFA'));
+        hasXFA = xfa !== undefined;
+      }
+    } catch {
+      // Ignore XFA check errors
     }
 
     return {

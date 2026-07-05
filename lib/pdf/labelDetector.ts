@@ -1,5 +1,3 @@
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
-
 export interface TextItem {
   text: string;
   x: number;
@@ -17,6 +15,9 @@ export async function extractAllPageTexts(pdfBuffer: Buffer): Promise<PageTextIt
   const pageTextsMap = new Map<number, TextItem[]>();
 
   try {
+    // Dynamically import pdfjs to prevent Vercel 500 errors if module initialization fails
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    
     const loadingTask = pdfjs.getDocument({
       data: new Uint8Array(pdfBuffer),
     });
